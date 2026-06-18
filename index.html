@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoiceBank — Voice-First Accessible Banking</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============ DESIGN SYSTEM ============ */
+:root {
+  --void:    #030609;
+  --deep:    #080f1a;
+  --surface: #0d1929;
+  --panel:   #111f33;
+  --rim:     rgba(0,200,255,0.10);
+  --rim2:    rgba(0,200,255,0.20);
+
+  --electric: #00c8ff;
+  --eglow:    rgba(0,200,255,0.28);
+  --gold:     #ffb84d;
+  --gglow:    rgba(255,184,77,0.28);
+  --green:    #00ff9d;
+  --red:      #ff4455;
+  --amber:    #ff9500;
+
+  --text1: #eaf6ff;
+  --text2: #7aaabb;
+  --text3: #2e4a5a;
+
+  --r: 18px;
+  --rsm: 11px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--void);
+  color: var(--text1);
+  font-family: 'Lexend', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ============ PAGE SYSTEM ============ */
+.page { display: none; min-height: 100vh; }
+.page.active { display: flex; }
+
+/* ============ AUTH PAGE ============ */
+#authPage {
+  align-items: center; justify-content: center;
+  padding: 24px; position: relative; overflow: hidden;
+  background: radial-gradient(ellipse 800px 600px at 60% -100px, rgba(0,200,255,0.05) 0%, transparent 70%),
+              var(--void);
+}
+
+.auth-wrap { width: 100%; max-width: 420px; position: relative; z-index: 1; }
+
+.auth-brand { text-align: center; margin-bottom: 36px; }
+.brand-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 76px; height: 76px;
+  border: 2px solid rgba(0,200,255,0.45);
+  border-radius: 22px; font-size: 34px; margin-bottom: 18px;
+  animation: iconPulse 4s ease-in-out infinite;
+}
+@keyframes iconPulse {
+  0%,100% { box-shadow: 0 0 20px var(--eglow); }
+  50%      { box-shadow: 0 0 55px var(--eglow), 0 0 90px rgba(0,200,255,0.08); }
+}
+.brand-name {
+  font-size: 2rem; font-weight: 700;
+  letter-spacing: -0.03em; color: var(--electric);
+}
+.brand-sub {
+  font-size: 0.78rem; color: var(--text2); margin-top: 6px;
+  letter-spacing: 0.12em; text-transform: uppercase; font-weight: 300;
+}
+
+.auth-card {
+  background: var(--surface);
+  border: 1px solid var(--rim);
+  border-radius: var(--r); padding: 36px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+}
+.tab-row {
+  display: flex; background: var(--deep);
+  border-radius: var(--rsm); padding: 4px; gap: 4px; margin-bottom: 28px;
+}
+.tab {
+  flex: 1; padding: 10px; border: none; background: transparent;
+  color: var(--text2); font-family: 'Lexend', sans-serif;
+  font-size: 0.82rem; font-weight: 500; cursor: pointer;
+  border-radius: 8px; transition: all 0.2s;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.tab.active { background: var(--panel); color: var(--electric); }
+
+.form-sec { display: none; }
+.form-sec.active { display: block; }
+
+.field { margin-bottom: 16px; }
+.field label {
+  display: block; font-size: 0.7rem; font-weight: 500;
+  color: var(--text2); margin-bottom: 8px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.field input {
+  width: 100%; background: var(--deep);
+  border: 1px solid var(--rim); border-radius: var(--rsm);
+  padding: 14px 16px; color: var(--text1);
+  font-family: 'Lexend', sans-serif; font-size: 0.95rem;
+  transition: all 0.2s; outline: none;
+}
+.field input:focus {
+  border-color: var(--electric);
+  box-shadow: 0 0 0 3px rgba(0,200,255,0.10);
+}
+.field input::placeholder { color: var(--text3); }
+
+.btn-main {
+  width: 100%; padding: 15px; background: var(--electric);
+  border: none; border-radius: var(--rsm); color: var(--void);
+  font-family: 'Lexend', sans-serif; font-size: 0.92rem;
+  font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s; margin-top: 6px;
+}
+.btn-main:hover { box-shadow: 0 0 30px var(--eglow); transform: translateY(-1px); }
+.btn-main:active { transform: translateY(0); }
+
+/* Backend status badge */
+.backend-badge {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 18px; padding: 10px 14px;
+  background: var(--deep); border: 1px solid var(--rim);
+  border-radius: var(--rsm); font-size: 0.75rem; color: var(--text3);
+}
+.backend-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--text3); flex-shrink: 0;
+  transition: background 0.4s;
+}
+.backend-dot.up   { background: var(--green); box-shadow: 0 0 8px rgba(0,255,157,0.5); }
+.backend-dot.down { background: var(--red); }
+#backendLabel { transition: color 0.3s; }
+
+/* ============ WAKE PAGE ============ */
+#wakePage {
+  flex-direction: column; align-items: center;
+  justify-content: center; text-align: center;
+  padding: 48px 32px; position: relative; overflow: hidden;
+  background: radial-gradient(ellipse 600px 500px at 50% 40%, rgba(0,200,255,0.04) 0%, transparent 70%),
+              var(--void);
+}
+
+.wake-orb-zone {
+  position: relative; width: 260px; height: 260px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 44px;
+}
+.wake-ring {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(0,200,255,0.12);
+  animation: ringPulse 4s ease-out infinite;
+}
+.wake-ring:nth-child(1) { width: 160px; height: 160px; animation-delay: 0s; }
+.wake-ring:nth-child(2) { width: 210px; height: 210px; animation-delay: 1.2s; }
+.wake-ring:nth-child(3) { width: 258px; height: 258px; animation-delay: 2.4s; }
+@keyframes ringPulse {
+  0%   { opacity: 0.6; transform: scale(0.96); }
+  100% { opacity: 0;   transform: scale(1.04); }
+}
+.wake-orb {
+  width: 130px; height: 130px; border-radius: 50%; position: relative; z-index: 2;
+  background: radial-gradient(circle at 38% 32%, rgba(0,200,255,0.35), rgba(0,40,80,0.9));
+  border: 2px solid rgba(0,200,255,0.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 52px; cursor: pointer;
+  animation: wakeBreath 4s ease-in-out infinite;
+  box-shadow: 0 0 50px var(--eglow);
+}
+@keyframes wakeBreath {
+  0%,100% { transform: scale(1); box-shadow: 0 0 40px var(--eglow); }
+  50%      { transform: scale(1.04); box-shadow: 0 0 80px var(--eglow); }
+}
+
+.wake-eyebrow {
+  font-size: 0.78rem; font-weight: 400;
+  color: var(--text2); letter-spacing: 0.16em;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.wake-headline {
+  font-size: 2.2rem; font-weight: 700;
+  letter-spacing: -0.025em; color: var(--text1); line-height: 1.15;
+}
+.wake-headline em { color: var(--electric); font-style: normal; }
+.wake-hint {
+  font-size: 0.95rem; color: var(--text2); font-weight: 300;
+  margin-top: 8px; margin-bottom: 36px;
+}
+
+.wake-sep {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 20px; color: var(--text3); font-size: 0.8rem;
+}
+.wake-sep::before, .wake-sep::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--rim2), transparent);
+}
+
+.btn-ghost {
+  padding: 13px 40px; background: transparent;
+  border: 1px solid rgba(0,200,255,0.28);
+  border-radius: var(--rsm); color: var(--electric);
+  font-family: 'Lexend', sans-serif; font-size: 0.88rem;
+  font-weight: 500; cursor: pointer; transition: all 0.2s;
+  letter-spacing: 0.06em;
+}
+.btn-ghost:hover { background: rgba(0,200,255,0.07); border-color: var(--electric); }
+
+.wake-status-row {
+  margin-top: 36px; display: flex; align-items: center; gap: 10px;
+  font-size: 0.8rem; color: var(--text3);
+}
+.blink-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--electric); animation: blink 2.5s ease-in-out infinite;
+}
+@keyframes blink { 0%,100% { opacity: 0.25; } 50% { opacity: 1; } }
+
+/* ============ BLIND MODE PAGE ============ */
+#blindPage {
+  flex-direction: column; align-items: center;
+  justify-content: space-between;
+  min-height: 100vh; padding: 24px;
+  background: var(--void);
+  position: relative; overflow: hidden;
+}
+#blindPage::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 700px 600px at 50% 50%, rgba(0,200,255,0.025) 0%, transparent 65%);
+}
+
+.b-top {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  width: 100%; max-width: 640px; z-index: 1;
+}
+.b-brand { font-size: 1rem; font-weight: 600; color: var(--electric); letter-spacing: 0.05em; }
+.b-user { font-size: 0.82rem; color: var(--text2); font-weight: 300; }
+.b-exit {
+  padding: 8px 16px; background: transparent;
+  border: 1px solid rgba(255,68,85,0.3); border-radius: 8px;
+  color: var(--red); font-family: 'Lexend', sans-serif;
+  font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
+}
+.b-exit:hover { background: rgba(255,68,85,0.08); }
+
+.b-center {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; gap: 26px;
+  width: 100%; max-width: 600px; z-index: 1;
+  padding: 20px 0;
+}
+
+/* Voice orb */
+.orb-zone {
+  position: relative; width: 280px; height: 280px;
+  display: flex; align-items: center; justify-content: center;
+}
+.orb-wave {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(0,200,255,0.10);
+  pointer-events: none;
+  animation: waveOut 3s ease-out infinite;
+}
+.orb-wave:nth-child(1) { width: 180px; height: 180px; animation-delay: 0s; }
+.orb-wave:nth-child(2) { width: 230px; height: 230px; animation-delay: 1s; }
+.orb-wave:nth-child(3) { width: 278px; height: 278px; animation-delay: 2s; }
+@keyframes waveOut {
+  0%   { opacity: 0.5; transform: scale(0.97); }
+  100% { opacity: 0;   transform: scale(1.04); }
+}
+
+.v-orb {
+  width: 150px; height: 150px; border-radius: 50%; position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 58px; cursor: pointer;
+  transition: border-color 0.4s, background 0.4s, box-shadow 0.4s;
+}
+.v-orb.idle {
+  background: radial-gradient(circle at 38% 32%, rgba(0,200,255,0.3), rgba(0,30,70,0.9));
+  border: 2px solid rgba(0,200,255,0.5);
+  animation: orbIdle 5s ease-in-out infinite;
+}
+.v-orb.listening {
+  background: radial-gradient(circle at 38% 32%, rgba(0,200,255,0.5), rgba(0,50,100,0.9));
+  border: 3px solid var(--electric);
+  box-shadow: 0 0 70px var(--eglow), 0 0 25px var(--eglow) inset;
+  animation: orbListen 0.7s ease-in-out infinite;
+}
+.v-orb.speaking {
+  background: radial-gradient(circle at 38% 32%, rgba(255,184,77,0.4), rgba(40,20,0,0.9));
+  border: 3px solid var(--gold);
+  box-shadow: 0 0 70px var(--gglow), 0 0 25px var(--gglow) inset;
+  animation: orbSpeak 0.45s ease-in-out infinite;
+}
+.v-orb.waiting {
+  background: radial-gradient(circle at 38% 32%, rgba(255,149,0,0.3), rgba(30,15,0,0.9));
+  border: 2px solid var(--amber);
+  animation: orbWait 1.8s ease-in-out infinite;
+}
+.v-orb.success {
+  background: radial-gradient(circle at 38% 32%, rgba(0,255,157,0.3), rgba(0,25,15,0.9));
+  border: 2px solid var(--green);
+  box-shadow: 0 0 70px rgba(0,255,157,0.25);
+  animation: none;
+}
+.v-orb.error {
+  background: radial-gradient(circle at 38% 32%, rgba(255,68,85,0.3), rgba(30,0,5,0.9));
+  border: 2px solid var(--red);
+  animation: shake 0.4s ease;
+}
+@keyframes orbIdle  { 0%,100% { transform: scale(1); box-shadow: 0 0 35px rgba(0,200,255,0.15); } 50% { transform: scale(1.025); box-shadow: 0 0 60px rgba(0,200,255,0.22); } }
+@keyframes orbListen{ 0%,100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@keyframes orbSpeak { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes orbWait  { 0%,100% { transform: scale(0.98); opacity: 0.8; } 50% { transform: scale(1.02); opacity: 1; } }
+@keyframes shake    { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+/* Status */
+.s-main {
+  font-size: 1.35rem; font-weight: 500; line-height: 1.4;
+  min-height: 60px; max-width: 500px; color: var(--text1);
+  transition: opacity 0.3s;
+}
+.s-sub {
+  font-size: 0.95rem; color: var(--text2); font-weight: 300;
+  min-height: 26px; max-width: 480px;
+}
+
+/* PIN dots */
+.pin-dots {
+  display: none; gap: 18px; justify-content: center;
+}
+.pin-dots.show { display: flex; }
+.p-dot {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid rgba(0,200,255,0.35); background: transparent;
+  transition: all 0.2s;
+}
+.p-dot.on {
+  background: var(--electric); border-color: var(--electric);
+  box-shadow: 0 0 14px var(--eglow);
+}
+
+/* Transcript */
+.transcript {
+  background: var(--surface); border: 1px solid var(--rim);
+  border-radius: var(--rsm); padding: 16px 22px;
+  min-height: 54px; font-family: 'JetBrains Mono', monospace;
+  font-size: 0.92rem; color: var(--electric);
+  width: 100%; max-width: 500px; text-align: left;
+  letter-spacing: 0.02em; transition: opacity 0.3s;
+  word-break: break-word;
+}
+.transcript.muted { color: var(--text3); font-family: 'Lexend', sans-serif; font-style: italic; }
+
+/* NLP result card */
+.nlp-card {
+  background: var(--surface); border: 1px solid rgba(0,200,255,0.15);
+  border-radius: var(--rsm); padding: 14px 20px;
+  width: 100%; max-width: 500px; text-align: left;
+  display: none; animation: fadeUp 0.4s ease;
+  font-size: 0.8rem;
+}
+.nlp-card.show { display: block; }
+.nlp-row { display: flex; justify-content: space-between; padding: 3px 0; }
+.nlp-key { color: var(--text2); }
+.nlp-val { color: var(--electric); font-family: 'JetBrains Mono', monospace; }
+.nlp-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.nlp-badge.TRANSFER       { background: rgba(255,184,77,0.12); color: var(--gold); }
+.nlp-badge.CHECK_BALANCE  { background: rgba(0,255,157,0.10); color: var(--green); }
+.nlp-badge.SHOW_TRANSACTIONS { background: rgba(0,200,255,0.10); color: var(--electric); }
+.nlp-badge.DEPOSIT        { background: rgba(0,200,255,0.10); color: var(--electric); }
+.nlp-badge.WITHDRAW       { background: rgba(255,68,85,0.10); color: var(--red); }
+.nlp-badge.ERROR          { background: rgba(255,68,85,0.10); color: var(--red); }
+
+/* Balance card */
+.bal-card {
+  background: var(--surface); border: 1px solid rgba(0,255,157,0.18);
+  border-radius: var(--r); padding: 28px 44px;
+  width: 100%; max-width: 400px; text-align: center;
+  display: none; animation: fadeUp 0.4s ease;
+}
+.bal-card.show { display: block; }
+.bal-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text2); margin-bottom: 8px; }
+.bal-amt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 3.2rem; font-weight: 600; color: var(--green);
+  letter-spacing: -0.02em;
+}
+.bal-name { font-size: 0.88rem; color: var(--text2); margin-top: 8px; }
+
+/* Transaction list */
+.txn-wrap { display: none; flex-direction: column; gap: 7px; width: 100%; max-width: 500px; animation: fadeUp 0.4s ease; }
+.txn-wrap.show { display: flex; }
+.txn-head { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text2); margin-bottom: 2px; }
+.txn-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--surface); border: 1px solid var(--rim);
+  border-radius: var(--rsm); padding: 13px 18px;
+}
+.txn-label { font-size: 0.86rem; color: var(--text2); }
+.txn-date { font-size: 0.72rem; color: var(--text3); margin-top: 2px; }
+.txn-amt { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 500; }
+.txn-amt.cr { color: var(--green); }
+.txn-amt.db { color: var(--red); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Command chips */
+.chips {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center; width: 100%;
+  max-width: 580px; z-index: 1; padding: 0 8px;
+}
+.chip {
+  padding: 7px 15px; background: var(--surface);
+  border: 1px solid var(--rim); border-radius: 50px;
+  font-size: 0.78rem; color: var(--text2); font-weight: 300;
+  cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em;
+}
+.chip:hover { border-color: var(--electric); color: var(--electric); }
+.chip b { color: var(--text1); font-weight: 500; }
+
+.b-foot {
+  font-size: 0.74rem; color: var(--text3); z-index: 1;
+  text-align: center; padding: 4px 0;
+}
+
+/* Toasts */
+#toastContainer {
+  position: fixed; top: 20px; right: 20px;
+  display: flex; flex-direction: column; gap: 8px; z-index: 999;
+}
+.toast {
+  padding: 12px 20px; border-radius: var(--rsm);
+  font-size: 0.86rem; font-weight: 500;
+  animation: toastIn 0.3s ease; max-width: 320px;
+}
+.toast.success { background: rgba(0,255,157,0.1); border: 1px solid rgba(0,255,157,0.28); color: var(--green); }
+.toast.error   { background: rgba(255,68,85,0.1); border: 1px solid rgba(255,68,85,0.28); color: var(--red); }
+.toast.info    { background: rgba(0,200,255,0.08); border: 1px solid rgba(0,200,255,0.22); color: var(--electric); }
+@keyframes toastIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+</style>
+</head>
+<body>
+
+<!-- ========== AUTH PAGE ========== -->
+<div class="page active" id="authPage">
+  <div class="auth-wrap">
+    <div class="auth-brand">
+      <div class="brand-icon">🎙️</div>
+      <div class="brand-name">VoiceBank</div>
+      <div class="brand-sub">Voice‑First · Accessible Banking for All</div>
+    </div>
+    <div class="auth-card">
+      <div class="tab-row">
+        <button class="tab active" id="tabLogin"  onclick="switchTab('login')">Login</button>
+        <button class="tab"        id="tabReg"    onclick="switchTab('register')">Register</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="form-sec active" id="loginForm">
+        <div class="field">
+          <label>Email Address</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••">
+        </div>
+        <button class="btn-main" onclick="handleLogin()">Login →</button>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="form-sec" id="registerForm">
+        <div class="field">
+          <label>Full Name</label>
+          <input type="text" id="regName" placeholder="Your name">
+        </div>
+        <div class="field">
+          <label>Email Address</label>
+          <input type="email" id="regEmail" placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="regPassword" placeholder="Min 6 characters">
+        </div>
+        <div class="field">
+          <label>4‑Digit Voice PIN</label>
+          <input type="password" id="regPin" placeholder="e.g. 1 2 3 4" maxlength="4" inputmode="numeric">
+        </div>
+        <button class="btn-main" onclick="handleRegister()">Create Account →</button>
+      </div>
+
+      <!-- Backend connection badge -->
+      <div class="backend-badge">
+        <div class="backend-dot" id="backendDot"></div>
+        <span id="backendLabel">Checking Java backend…</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== WAKE PAGE ========== -->
+<div class="page" id="wakePage">
+  <div class="wake-orb-zone">
+    <div class="wake-ring"></div>
+    <div class="wake-ring"></div>
+    <div class="wake-ring"></div>
+    <div class="wake-orb" onclick="startBlindActivation()">🎙️</div>
+  </div>
+
+  <div class="wake-eyebrow">Say to Activate Blind Mode</div>
+  <div class="wake-headline">"<em>Hey VoiceBank</em>"</div>
+  <div class="wake-hint">or "Hello VoiceBank" · Passive mic is active</div>
+
+  <div class="wake-sep" style="width:280px">OR</div>
+  <button class="btn-ghost" onclick="startBlindActivation()">Tap to Activate Blind Mode</button>
+
+  <div class="wake-status-row">
+    <div class="blink-dot"></div>
+    Passive listening · Waiting for wake word
+  </div>
+</div>
+
+<!-- ========== BLIND MODE PAGE ========== -->
+<div class="page" id="blindPage">
+  <div class="b-top">
+    <div class="b-brand">🎙️ VoiceBank</div>
+    <div class="b-user" id="bUserName">—</div>
+    <button class="b-exit" onclick="exitBlindMode()">Exit</button>
+  </div>
+
+  <div class="b-center">
+    <!-- Orb -->
+    <div class="orb-zone">
+      <div class="orb-wave"></div>
+      <div class="orb-wave"></div>
+      <div class="orb-wave"></div>
+      <div class="v-orb idle" id="vOrb" onclick="tapOrb()">🎤</div>
+    </div>
+
+    <div class="s-main" id="sMain">Listening…</div>
+    <div class="s-sub"  id="sSub">Speak a command</div>
+
+    <div class="pin-dots" id="pinDots">
+      <div class="p-dot" id="pd0"></div>
+      <div class="p-dot" id="pd1"></div>
+      <div class="p-dot" id="pd2"></div>
+      <div class="p-dot" id="pd3"></div>
+    </div>
+
+    <div class="transcript muted" id="transcript">Waiting for speech…</div>
+
+    <!-- NLP parse result from Java backend -->
+    <div class="nlp-card" id="nlpCard">
+      <div class="nlp-row">
+        <span class="nlp-key">Intent</span>
+        <span class="nlp-val" id="nlpIntent">—</span>
+      </div>
+      <div class="nlp-row" id="nlpAmtRow" style="display:none">
+        <span class="nlp-key">Amount</span>
+        <span class="nlp-val" id="nlpAmt">—</span>
+      </div>
+      <div class="nlp-row" id="nlpRcvRow" style="display:none">
+        <span class="nlp-key">Receiver</span>
+        <span class="nlp-val" id="nlpRcv">—</span>
+      </div>
+      <div class="nlp-row">
+        <span class="nlp-key">Source</span>
+        <span class="nlp-val" id="nlpSource">—</span>
+      </div>
+    </div>
+
+    <div class="bal-card" id="balCard">
+      <div class="bal-label">Account Balance</div>
+      <div class="bal-amt" id="balAmt">₹0</div>
+      <div class="bal-name" id="balName"></div>
+    </div>
+
+    <div class="txn-wrap" id="txnWrap">
+      <div class="txn-head">Recent Transactions</div>
+      <div id="txnList"></div>
+    </div>
+  </div>
+
+  <div class="chips">
+    <div class="chip"><b>"Check</b> my balance"</div>
+    <div class="chip"><b>"Send</b> 500 to Rahul"</div>
+    <div class="chip"><b>"Show</b> transactions"</div>
+    <div class="chip"><b>"Deposit</b> 1000"</div>
+    <div class="chip"><b>"Help"</b></div>
+    <div class="chip"><b>"Logout"</b></div>
+  </div>
+
+  <div class="b-foot">Tap orb anytime · All secure actions require spoken PIN · NLP powered by Java backend</div>
+</div>
+
+<!-- ========== TOASTS ========== -->
+<div id="toastContainer"></div>
+
+<script>
+/* ============================================================
+   CONFIG — Java Spring Boot backend URL
+   Change this if your backend runs on a different port.
+   ============================================================ */
+const API_BASE = 'http://localhost:8080/api';
+
+/* ============================================================
+   BACKEND INTEGRATION
+   ============================================================ */
+let backendOnline = false;
+
+async function checkBackend() {
+  try {
+    const res = await fetch(`${API_BASE}/health`, { method: 'GET', signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      backendOnline = true;
+      document.getElementById('backendDot').className = 'backend-dot up';
+      document.getElementById('backendLabel').textContent = 'Java backend connected ✓';
+      document.getElementById('backendLabel').style.color = 'var(--green)';
+    } else { throw new Error('non-ok'); }
+  } catch {
+    backendOnline = false;
+    document.getElementById('backendDot').className = 'backend-dot down';
+    document.getElementById('backendLabel').textContent = 'Backend offline — using local NLP fallback';
+    document.getElementById('backendLabel').style.color = 'var(--amber)';
+  }
+}
+
+/**
+ * Call Java NLP API to parse a raw voice text string.
+ * Falls back to local JS parser if backend is offline.
+ */
+async function apiParseCommand(text) {
+  if (!backendOnline) {
+    // Graceful fallback: use client-side parser
+    return { source: 'local', ...localParseCommand(text) };
+  }
+  try {
+    const res = await fetch(`${API_BASE}/parse-voice-command`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+      signal: AbortSignal.timeout(4000)
+    });
+    const data = await res.json();
+    return { source: 'java', ...data };
+  } catch {
+    return { source: 'local', ...localParseCommand(text) };
+  }
+}
+
+/**
+ * Call Java Transfer Validation API.
+ * Falls back to local validation if backend is offline.
+ */
+async function apiValidateTransfer(sender, receiver, amount, senderBalance) {
+  if (!backendOnline) {
+    return localValidateTransfer(sender, receiver, amount, senderBalance);
+  }
+  try {
+    const res = await fetch(`${API_BASE}/validate-transfer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sender, receiver, amount, senderBalance }),
+      signal: AbortSignal.timeout(4000)
+    });
+    return await res.json();
+  } catch {
+    return localValidateTransfer(sender, receiver, amount, senderBalance);
+  }
+}
+
+function localValidateTransfer(sender, receiver, amount, senderBalance) {
+  if (!sender || !receiver) return { valid: false, message: 'Sender/receiver required.' };
+  if (sender.toLowerCase() === receiver.toLowerCase()) return { valid: false, message: 'Cannot send to yourself.' };
+  if (!amount || amount <= 0) return { valid: false, message: 'Amount must be greater than zero.' };
+  if (amount > 100000) return { valid: false, message: 'Maximum transfer is ₹1,00,000 per transaction.' };
+  if (senderBalance < amount) return { valid: false, message: `Insufficient balance. Available: ₹${senderBalance}, Required: ₹${amount}` };
+  return { valid: true, message: `₹${amount} transfer to ${receiver} is valid.` };
+}
+
+/* ============================================================
+   DATA LAYER — localStorage (prototype, no DB)
+   ============================================================ */
+const DB = {
+  users   : () => { try { return JSON.parse(localStorage.getItem('vb_users')||'[]'); } catch { return []; } },
+  setUsers: v  => localStorage.setItem('vb_users', JSON.stringify(v)),
+  txns    : () => { try { return JSON.parse(localStorage.getItem('vb_txns') ||'[]'); } catch { return []; } },
+  setTxns : v  => localStorage.setItem('vb_txns', JSON.stringify(v)),
+  session : () => localStorage.getItem('vb_session'),
+  setSession: e => localStorage.setItem('vb_session', e),
+  clearSession: () => localStorage.removeItem('vb_session'),
+};
+
+function currentUser() {
+  const e = DB.session();
+  return e ? DB.users().find(u => u.email === e) || null : null;
+}
+function updateUser(u) {
+  const arr = DB.users();
+  const i = arr.findIndex(x => x.email === u.email);
+  if (i >= 0) { arr[i] = u; DB.setUsers(arr); }
+}
+function addTxn(tx) {
+  const arr = DB.txns();
+  tx.id = Date.now(); tx.date = new Date().toISOString();
+  arr.unshift(tx); DB.setTxns(arr);
+}
+function fmtMoney(n) {
+  return '₹' + Number(n).toLocaleString('en-IN');
+}
+
+/* ============================================================
+   PAGE SYSTEM
+   ============================================================ */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+function switchTab(t) {
+  document.getElementById('tabLogin').classList.toggle('active', t === 'login');
+  document.getElementById('tabReg').classList.toggle('active', t === 'register');
+  document.getElementById('loginForm').classList.toggle('active', t === 'login');
+  document.getElementById('registerForm').classList.toggle('active', t === 'register');
+}
+
+function handleRegister() {
+  const name  = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim().toLowerCase();
+  const pass  = document.getElementById('regPassword').value;
+  const pin   = document.getElementById('regPin').value.trim();
+
+  if (!name||!email||!pass||!pin) return toast('All fields required','error');
+  if (pass.length < 6) return toast('Password min 6 chars','error');
+  if (!/^\d{4}$/.test(pin)) return toast('PIN must be exactly 4 digits','error');
+
+  const users = DB.users();
+  if (users.find(u => u.email === email)) return toast('Email already used','error');
+
+  const user = { name, email, password: pass, pin, balance: 5000 };
+  users.push(user); DB.setUsers(users);
+  addTxn({ sender:'SYSTEM', receiver:email, amount:5000, type:'credit', note:'Welcome bonus' });
+
+  DB.setSession(email);
+  toast(`Welcome, ${name}!`, 'success');
+  goWake();
+}
+
+function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass  = document.getElementById('loginPassword').value;
+  const user  = DB.users().find(u => u.email===email && u.password===pass);
+  if (!user) return toast('Invalid email or password','error');
+  DB.setSession(email);
+  toast(`Welcome back, ${user.name}`, 'success');
+  goWake();
+}
+
+function goWake() {
+  showPage('wakePage');
+  startPassive();
+}
+
+/* ============================================================
+   TEXT-TO-SPEECH
+   ============================================================ */
+let speaking = false;
+
+function speak(text, cb) {
+  if (!window.speechSynthesis) { cb && cb(); return; }
+  window.speechSynthesis.cancel();
+  speaking = true;
+
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.92; u.pitch = 1.0; u.lang = 'en-IN'; u.volume = 1;
+
+  u.onend   = () => { speaking = false; cb && setTimeout(cb, 200); };
+  u.onerror = () => { speaking = false; cb && setTimeout(cb, 200); };
+
+  setTimeout(() => window.speechSynthesis.speak(u), 50);
+}
+
+function stopSpeak() {
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  speaking = false;
+}
+
+/* ============================================================
+   SPEECH RECOGNITION HELPERS
+   ============================================================ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+let recActive = false;
+
+function killRec() {
+  recActive = false;
+  if (rec) { try { rec.stop(); } catch(e){} rec = null; }
+}
+
+function listenOnce(opts) {
+  if (!SR) { toast('Speech recognition needs Chrome or Edge','error'); return; }
+  killRec();
+
+  rec = new SR();
+  rec.continuous      = opts.continuous || false;
+  rec.interimResults  = true;
+  rec.lang            = 'en-IN';
+  rec.maxAlternatives = 1;
+  recActive = true;
+
+  let finalGot = false;
+
+  rec.onresult = (ev) => {
+    let interim = '', final = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const t = ev.results[i][0].transcript;
+      ev.results[i].isFinal ? (final += t) : (interim += t);
+    }
+    if (interim) setTranscript(interim, false);
+    if (final) { finalGot = true; setTranscript(final, true); opts.onResult(final.trim()); }
+  };
+
+  rec.onerror = (ev) => {
+    recActive = false;
+    if (ev.error !== 'no-speech' && ev.error !== 'aborted') console.warn('SR error:', ev.error);
+    opts.onEnd && opts.onEnd(false);
+  };
+
+  rec.onend = () => {
+    recActive = false;
+    opts.onEnd && opts.onEnd(finalGot);
+  };
+
+  try { rec.start(); } catch(e) { opts.onEnd && opts.onEnd(false); }
+}
+
+/* ============================================================
+   PASSIVE WAKE-WORD DETECTION
+   ============================================================ */
+let passiveOn = false;
+
+function startPassive() {
+  if (!SR || passiveOn) return;
+  passiveOn = true;
+  runPassive();
+}
+
+function runPassive() {
+  if (!passiveOn) return;
+  listenOnce({
+    onResult(txt) {
+      const t = txt.toLowerCase();
+      if (/\b(hey|hello|hi)\s*voice\s*bank\b|activate\s*blind|start\s*blind/.test(t)) {
+        stopPassive();
+        startBlindActivation();
+      }
+    },
+    onEnd() {
+      if (passiveOn) setTimeout(runPassive, 600);
+    }
+  });
+}
+
+function stopPassive() {
+  passiveOn = false;
+  killRec();
+}
+
+/* ============================================================
+   BLIND MODE ACTIVATION  (Wake → PIN → Active)
+   ============================================================ */
+function startBlindActivation() {
+  stopPassive();
+  killRec();
+  stopSpeak();
+
+  const user = currentUser();
+  if (!user) { showPage('authPage'); return; }
+
+  showPage('blindPage');
+  document.getElementById('bUserName').textContent = user.name;
+  hideDisplays();
+
+  setOrb('waiting');
+  setStatus('Activating Blind Mode', 'Say your 4-digit PIN to continue');
+  showPinRow(true); clearPinFill();
+  setTranscript('', true);
+
+  speak('Blind mode activating. Please say your four digit PIN to continue.',
+    () => listenForPIN(spokenPin => {
+      if (spokenPin === user.pin) {
+        activateSuccess(user);
+      } else {
+        setOrb('error');
+        setStatus('Incorrect PIN', 'Please try again');
+        speak('Incorrect PIN. Please try again.', () => startBlindActivation());
+      }
+    })
+  );
+}
+
+function activateSuccess(user) {
+  showPinRow(false);
+  setOrb('success');
+  setStatus('Blind Mode Active!', `Welcome, ${user.name}`);
+
+  speak(
+    `Blind mode activated. Welcome, ${user.name}. Your current balance is ${user.balance} rupees. ` +
+    `You can say: check balance, send money, deposit, show transactions, help, or logout.`,
+    () => {
+      setOrb('idle');
+      setStatus('Listening for your command…', 'balance · send · deposit · transactions · help');
+      startBlindLoop();
+    }
+  );
+}
+
+/* ============================================================
+   PIN LISTENER
+   ============================================================ */
+function listenForPIN(cb, attempt) {
+  attempt = attempt || 1;
+  setOrb('listening');
+  setTranscript('', true);
+  showPinRow(true); clearPinFill();
+
+  listenOnce({
+    onResult(txt) {
+      const pin = textToPin(txt);
+      if (pin) {
+        fillPinDots(pin.length);
+        cb(pin);
+      }
+    },
+    onEnd(got) {
+      if (!got) {
+        if (attempt < 3) {
+          speak('Did not catch that. Please say your 4-digit PIN.',
+            () => listenForPIN(cb, attempt + 1));
+        } else {
+          speak('Too many failed attempts. Please try again.', () => startBlindActivation());
+        }
+      }
+    }
+  });
+}
+
+/* ============================================================
+   BLIND LOOP  (continuous voice command cycle)
+   ============================================================ */
+let blindActive = false;
+let vState = 'COMMAND';
+let pendingCmd = null;
+
+function startBlindLoop() {
+  blindActive = true;
+  vState = 'COMMAND';
+  pendingCmd = null;
+  blindListen();
+}
+
+function stopBlindLoop() {
+  blindActive = false;
+  killRec();
+}
+
+function blindListen() {
+  if (!blindActive || speaking) return;
+  setOrb('idle');
+
+  listenOnce({
+    onResult(txt) {
+      handleVoiceInput(txt.trim());
+    },
+    onEnd(got) {
+      if (!got && blindActive && vState === 'COMMAND' && !speaking) {
+        setTimeout(blindListen, 500);
+      }
+    }
+  });
+}
+
+async function handleVoiceInput(raw) {
+  const t = raw.toLowerCase();
+  setTranscript(raw, true);
+
+  if (vState === 'CONFIRM_PIN') {
+    const pin = textToPin(t);
+    if (pin) {
+      vState = 'COMMAND';
+      confirmAndRun(pin);
+    } else {
+      speak('Please say your 4-digit PIN clearly.', () => {
+        setOrb('waiting');
+        setStatus('Say your PIN', 'Speak each digit clearly');
+        showPinRow(true); clearPinFill();
+        blindListen();
+      });
+    }
+    return;
+  }
+
+  if (vState === 'TRANSFER_DETAILS') {
+    const parsed = await apiParseCommand(t);
+    if (parsed.intent === 'TRANSFER' && parsed.amount && parsed.receiver) {
+      showNLPCard(parsed);
+      pendingCmd = { intent:'TRANSFER', amount: parsed.amount, receiver: parsed.receiver };
+      askPin(`Send ${fmtMoney(parsed.amount)} to ${parsed.receiver}?`);
+    } else {
+      speak('Please say: send, the amount, to, then the name. For example: send five hundred to Rahul.',
+        () => {
+          setStatus('Say the transfer details', '"Send 500 to Rahul"');
+          blindListen();
+        });
+    }
+    return;
+  }
+
+  // Parse fresh command via Java backend (or local fallback)
+  setOrb('waiting');
+  setStatus('Processing…', 'Sending to Java NLP engine');
+  const parsed = await apiParseCommand(t);
+  showNLPCard(parsed);
+
+  const cmd = mapParsedToCmd(parsed, t);
+  if (!cmd) {
+    setOrb('error');
+    setStatus('Not understood', 'Try: balance · send · deposit · transactions · help');
+    speak(`Sorry, I didn't understand that. Say: check balance, send money, deposit, show transactions, or help.`, () => {
+      setOrb('idle');
+      setStatus('Listening…', 'balance · send · deposit · transactions · help · logout');
+      blindListen();
+    });
+    return;
+  }
+
+  runCmd(cmd);
+}
+
+/* Map Java API response to internal command object */
+function mapParsedToCmd(parsed, rawText) {
+  const t = rawText.toLowerCase();
+  if (parsed.intent === 'CHECK_BALANCE')     return { intent: 'BALANCE' };
+  if (parsed.intent === 'SHOW_TRANSACTIONS') return { intent: 'TRANSACTIONS' };
+  if (parsed.intent === 'DEPOSIT')           return { intent: 'DEPOSIT', amount: parsed.amount };
+  if (parsed.intent === 'WITHDRAW')          return { intent: 'WITHDRAW', amount: parsed.amount };
+  if (parsed.intent === 'TRANSFER')          return { intent: 'TRANSFER', amount: parsed.amount, receiver: parsed.receiver };
+
+  // Local fallbacks for commands not in Java NLP
+  if (/\b(send\s*money|transfer\s*money|want.*send|make.*payment)\b/.test(t))
+    return { intent: 'TRANSFER_INIT' };
+  if (/\b(help|commands?|what\s*can|options?)\b/.test(t))     return { intent: 'HELP' };
+  if (/\b(logout|log\s*out|sign\s*out|exit|bye|goodbye)\b/.test(t)) return { intent: 'LOGOUT' };
+
+  return null;
+}
+
+/* ============================================================
+   LOCAL NLP FALLBACK (mirrors Java NLPService patterns)
+   ============================================================ */
+function localParseCommand(text) {
+  const t = text.toLowerCase();
+
+  if (/\b(balance|check\s*balance|show\s*balance|my\s*balance)\b/.test(t))
+    return { intent: 'CHECK_BALANCE', success: true, message: 'Fetching your balance.' };
+
+  if (/\b(transactions?|history|recent|statement)\b/.test(t))
+    return { intent: 'SHOW_TRANSACTIONS', success: true, message: 'Showing transaction history.' };
+
+  const deposit = t.match(/\bdeposit\s+(?:rs\.?\s*|inr\s*|rupees?\s*)?(\d+(?:\.\d+)?)/);
+  if (deposit)
+    return { intent: 'DEPOSIT', amount: parseFloat(deposit[1]), success: true, message: `Depositing ₹${deposit[1]}` };
+
+  const withdraw = t.match(/\bwithdraw(?:al)?\s+(?:rs\.?\s*|inr\s*|rupees?\s*)?(\d+(?:\.\d+)?)/);
+  if (withdraw)
+    return { intent: 'WITHDRAW', amount: parseFloat(withdraw[1]), success: true, message: `Withdrawing ₹${withdraw[1]}` };
+
+  const tr = localParseTransfer(t);
+  if (tr) return { intent: 'TRANSFER', ...tr, success: true, message: `Transferring ₹${tr.amount} to ${tr.receiver}` };
+
+  if (/\b(help|commands?)\b/.test(t)) return { intent: 'HELP', success: true };
+  if (/\b(logout|exit|bye)\b/.test(t)) return { intent: 'LOGOUT', success: true };
+
+  return { intent: 'ERROR', success: false, message: `Could not understand: "${text}"` };
+}
+
+function localParseTransfer(t) {
+  let m = t.match(/\b(?:send|transfer|wire)\s+(?:rs\.?\s*|inr\s*|rupees?\s*)?(\d+(?:\.\d+)?)\s+(?:to|for)\s+([a-z][a-z\s]*)/i);
+  if (m) return { amount: parseFloat(m[1]), receiver: m[2].trim() };
+  m = t.match(/\bpay\s+([a-z][a-z\s]*?)\s+(?:rs\.?\s*|inr\s*|rupees?\s*)?(\d+(?:\.\d+)?)/i);
+  if (m) return { amount: parseFloat(m[2]), receiver: m[1].trim() };
+  return null;
+}
+
+/* ============================================================
+   NLP CARD DISPLAY
+   ============================================================ */
+function showNLPCard(parsed) {
+  const card = document.getElementById('nlpCard');
+  const intentEl = document.getElementById('nlpIntent');
+  const amtRow = document.getElementById('nlpAmtRow');
+  const rcvRow = document.getElementById('nlpRcvRow');
+
+  intentEl.innerHTML = `<span class="nlp-badge ${parsed.intent || 'ERROR'}">${parsed.intent || 'ERROR'}</span>`;
+  document.getElementById('nlpSource').textContent = parsed.source === 'java' ? '☕ Java backend' : '🌐 Local fallback';
+
+  if (parsed.amount) {
+    amtRow.style.display = 'flex';
+    document.getElementById('nlpAmt').textContent = fmtMoney(parsed.amount);
+  } else { amtRow.style.display = 'none'; }
+
+  if (parsed.receiver) {
+    rcvRow.style.display = 'flex';
+    document.getElementById('nlpRcv').textContent = parsed.receiver;
+  } else { rcvRow.style.display = 'none'; }
+
+  card.classList.add('show');
+}
+
+function hideNLPCard() {
+  document.getElementById('nlpCard').classList.remove('show');
+}
+
+/* ============================================================
+   COMMAND EXECUTION
+   ============================================================ */
+function runCmd(cmd) {
+  hideDisplays();
+
+  switch(cmd.intent) {
+    case 'BALANCE':
+      pendingCmd = cmd;
+      askPin('Verify identity to view balance');
+      break;
+
+    case 'TRANSFER':
+      pendingCmd = cmd;
+      askPin(`Send ${fmtMoney(cmd.amount)} to ${cmd.receiver}?`);
+      break;
+
+    case 'TRANSFER_INIT':
+      vState = 'TRANSFER_DETAILS';
+      setOrb('listening');
+      setStatus('Who and how much?', 'e.g. "Send 500 to Rahul"');
+      speak('Sure. Please say the amount and recipient. For example: send five hundred to Rahul.', blindListen);
+      break;
+
+    case 'DEPOSIT':
+      pendingCmd = cmd;
+      askPin(`Deposit ${fmtMoney(cmd.amount)} to your account?`);
+      break;
+
+    case 'WITHDRAW':
+      pendingCmd = cmd;
+      askPin(`Withdraw ${fmtMoney(cmd.amount)} from your account?`);
+      break;
+
+    case 'TRANSACTIONS':
+      showTransactions();
+      break;
+
+    case 'HELP':
+      doHelp();
+      break;
+
+    case 'LOGOUT':
+      doLogout();
+      break;
+  }
+}
+
+function askPin(label) {
+  vState = 'CONFIRM_PIN';
+  setOrb('waiting');
+  setStatus(label, 'Say your 4-digit PIN to confirm');
+  showPinRow(true); clearPinFill();
+  setTranscript('', true);
+  speak(`${label}. Please say your four digit PIN to confirm.`, blindListen);
+}
+
+async function confirmAndRun(spokenPin) {
+  const user = currentUser();
+  if (!user) return;
+
+  showPinRow(false);
+
+  if (spokenPin !== user.pin) {
+    setOrb('error');
+    setStatus('Incorrect PIN', 'Command cancelled');
+    pendingCmd = null;
+    speak('Incorrect PIN. Command cancelled. Please try again.', () => {
+      setOrb('idle');
+      setStatus('Listening…', 'balance · send · deposit · transactions · help');
+      blindListen();
+    });
+    return;
+  }
+
+  const cmd = pendingCmd;
+  pendingCmd = null;
+  if (!cmd) return;
+
+  switch(cmd.intent) {
+    case 'BALANCE':  execBalance(user); break;
+    case 'TRANSFER': await execTransfer(user, cmd); break;
+    case 'DEPOSIT':  execDeposit(user, cmd); break;
+    case 'WITHDRAW': execWithdraw(user, cmd); break;
+  }
+}
+
+function execBalance(user) {
+  hideDisplays();
+  hideNLPCard();
+  setOrb('speaking');
+  setStatus('Your Balance', 'Identity verified ✓');
+
+  document.getElementById('balAmt').textContent = fmtMoney(user.balance);
+  document.getElementById('balName').textContent = user.name;
+  document.getElementById('balCard').classList.add('show');
+
+  speak(`Your current balance is ${user.balance} rupees. What else can I help you with?`, () => {
+    setOrb('idle');
+    setStatus('Listening…', 'balance · send · deposit · transactions · help');
+    blindListen();
+  });
+}
+
+async function execTransfer(user, cmd) {
+  // Validate via Java backend first
+  const validation = await apiValidateTransfer(user.email, cmd.receiver, cmd.amount, user.balance);
+  if (!validation.valid) {
+    setOrb('error');
+    setStatus('Transfer Failed', validation.message);
+    speak(validation.message, resumeIdle);
+    return;
+  }
+
+  const users = DB.users();
+  const rcv = users.find(u =>
+    u.email === cmd.receiver ||
+    u.name.toLowerCase() === cmd.receiver.toLowerCase() ||
+    u.name.toLowerCase().includes(cmd.receiver.toLowerCase())
+  );
+
+  if (!rcv) {
+    setOrb('error');
+    setStatus('User not found', `"${cmd.receiver}" is not registered`);
+    speak(`User ${cmd.receiver} was not found. Please check the name and try again.`, resumeIdle);
+    return;
+  }
+  if (rcv.email === user.email) {
+    speak('You cannot send money to yourself.', resumeIdle);
+    return;
+  }
+
+  user.balance -= cmd.amount;
+  updateUser(user);
+  rcv.balance += cmd.amount;
+  updateUser(rcv);
+  addTxn({ sender:user.email, receiver:rcv.email, amount:cmd.amount, type:'debit',  note:`Voice transfer to ${rcv.name}` });
+  addTxn({ sender:user.email, receiver:rcv.email, amount:cmd.amount, type:'credit', note:`Voice transfer from ${user.name}` });
+
+  hideDisplays();
+  hideNLPCard();
+  setOrb('success');
+  setStatus(`Sent ${fmtMoney(cmd.amount)} to ${rcv.name}`, `New balance: ${fmtMoney(user.balance)}`);
+  toast(`${fmtMoney(cmd.amount)} sent to ${rcv.name}`, 'success');
+  speak(`Transfer successful. ${cmd.amount} rupees sent to ${rcv.name}. Your new balance is ${user.balance} rupees.`, resumeIdle);
+}
+
+function execDeposit(user, cmd) {
+  user.balance += cmd.amount;
+  updateUser(user);
+  addTxn({ sender:'SYSTEM', receiver:user.email, amount:cmd.amount, type:'credit', note:'Voice deposit' });
+
+  hideDisplays();
+  hideNLPCard();
+  setOrb('success');
+  setStatus(`Deposited ${fmtMoney(cmd.amount)}`, `New balance: ${fmtMoney(user.balance)}`);
+  document.getElementById('balAmt').textContent = fmtMoney(user.balance);
+  document.getElementById('balName').textContent = user.name;
+  document.getElementById('balCard').classList.add('show');
+  toast(`${fmtMoney(cmd.amount)} deposited`, 'success');
+  speak(`Deposit successful. ${cmd.amount} rupees added. Your new balance is ${user.balance} rupees.`, resumeIdle);
+}
+
+function execWithdraw(user, cmd) {
+  if (user.balance < cmd.amount) {
+    setOrb('error');
+    setStatus('Insufficient Balance', `You have ${fmtMoney(user.balance)}`);
+    speak(`Insufficient balance. You have ${user.balance} rupees. Withdrawal failed.`, resumeIdle);
+    return;
+  }
+  user.balance -= cmd.amount;
+  updateUser(user);
+  addTxn({ sender:user.email, receiver:'SYSTEM', amount:cmd.amount, type:'debit', note:'Voice withdrawal' });
+
+  hideDisplays();
+  hideNLPCard();
+  setOrb('success');
+  setStatus(`Withdrawn ${fmtMoney(cmd.amount)}`, `New balance: ${fmtMoney(user.balance)}`);
+  document.getElementById('balAmt').textContent = fmtMoney(user.balance);
+  document.getElementById('balName').textContent = user.name;
+  document.getElementById('balCard').classList.add('show');
+  toast(`${fmtMoney(cmd.amount)} withdrawn`, 'success');
+  speak(`Withdrawal successful. ${cmd.amount} rupees withdrawn. Your new balance is ${user.balance} rupees.`, resumeIdle);
+}
+
+function showTransactions() {
+  const user = currentUser();
+  const txns = DB.txns().filter(t => t.sender===user.email || t.receiver===user.email).slice(0,5);
+
+  hideDisplays();
+  hideNLPCard();
+  setOrb('speaking');
+  setStatus('Recent Transactions', `${txns.length} records`);
+
+  const list = document.getElementById('txnList');
+  if (txns.length === 0) {
+    list.innerHTML = '<div class="txn-row"><span class="txn-label" style="color:var(--text3)">No transactions yet</span></div>';
+  } else {
+    list.innerHTML = txns.map(t => {
+      const cr = t.type==='credit' && t.receiver===user.email;
+      const dt = new Date(t.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+      return `<div class="txn-row">
+        <div><div class="txn-label">${t.note||'Transaction'}</div><div class="txn-date">${dt}</div></div>
+        <div class="txn-amt ${cr?'cr':'db'}">${cr?'+':'-'}${fmtMoney(t.amount)}</div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('txnWrap').classList.add('show');
+
+  const credits = txns.filter(t=>t.type==='credit'&&t.receiver===user.email).reduce((s,t)=>s+t.amount,0);
+  const debits  = txns.filter(t=>t.type==='debit' &&t.sender===user.email).reduce((s,t)=>s+t.amount,0);
+  const msg = txns.length === 0
+    ? 'You have no transactions yet.'
+    : `Your last ${txns.length} transactions. Total received: ${credits} rupees. Total sent: ${debits} rupees.`;
+
+  speak(msg, resumeIdle);
+}
+
+function doHelp() {
+  setOrb('speaking');
+  setStatus('Voice Commands', 'Listen carefully');
+  hideDisplays(); hideNLPCard();
+  speak(
+    'Available commands. ' +
+    'Say check balance to hear your balance. ' +
+    'Say send, amount, to, name — to transfer money. Example: send five hundred to Rahul. ' +
+    'Say deposit, then amount — to add money. Example: deposit one thousand. ' +
+    'Say withdraw, then amount — to take out money. ' +
+    'Say show transactions to hear your recent activity. ' +
+    'Say logout to sign out. ' +
+    'All balance and transfer commands require your spoken PIN for security.',
+    resumeIdle
+  );
+}
+
+function doLogout() {
+  stopBlindLoop();
+  stopSpeak();
+  speak('Logging out. Goodbye!', () => {
+    DB.clearSession();
+    hideDisplays();
+    showPage('authPage');
+  });
+}
+
+function exitBlindMode() {
+  stopBlindLoop();
+  stopSpeak();
+  hideDisplays(); hideNLPCard();
+  vState = 'COMMAND';
+  pendingCmd = null;
+  showPage('wakePage');
+  setTimeout(startPassive, 500);
+  toast('Blind mode deactivated', 'info');
+}
+
+function tapOrb() {
+  if (vState === 'COMMAND' && !recActive && !speaking) {
+    setStatus('Listening…', 'Speak your command');
+    blindListen();
+  }
+}
+
+function resumeIdle() {
+  setOrb('idle');
+  setStatus('Listening…', 'balance · send · deposit · transactions · help · logout');
+  blindListen();
+}
+
+/* ============================================================
+   PIN TEXT CONVERSION
+   ============================================================ */
+function textToPin(text) {
+  const word2d = {
+    zero:0, oh:0, o:0,
+    one:1, won:1,
+    two:2, to:2, too:2,
+    three:3, tree:3,
+    four:4, 'for':4, fore:4,
+    five:5, six:6, seven:7,
+    eight:8, ate:8, nine:9,
+  };
+
+  const justD = text.replace(/[\s,\-\.]/g,'');
+  if (/^\d{4,}$/.test(justD)) return justD.slice(0,4);
+
+  const mNum = text.match(/\b(\d{4})\b/);
+  if (mNum) return mNum[1];
+
+  const words = text.toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(Boolean);
+  const digits = [];
+  for (const w of words) {
+    if (word2d[w] !== undefined) digits.push(word2d[w]);
+    else if (/^\d$/.test(w)) digits.push(parseInt(w));
+    if (digits.length === 4) break;
+  }
+  if (digits.length === 4) return digits.join('');
+
+  return null;
+}
+
+/* ============================================================
+   UI HELPERS
+   ============================================================ */
+const orbIcons = {
+  idle:'🎤', listening:'🔴', speaking:'🔊',
+  waiting:'⏳', success:'✅', error:'❌'
+};
+
+function setOrb(state) {
+  const el = document.getElementById('vOrb');
+  el.className = 'v-orb ' + state;
+  el.textContent = orbIcons[state] || '🎤';
+}
+
+function setStatus(main, sub) {
+  document.getElementById('sMain').textContent = main || '';
+  document.getElementById('sSub').textContent  = sub  || '';
+}
+
+function setTranscript(txt, final) {
+  const el = document.getElementById('transcript');
+  if (!txt) {
+    el.textContent = 'Waiting for speech…';
+    el.classList.add('muted');
+  } else {
+    el.textContent = txt;
+    el.classList.remove('muted');
+    el.style.opacity = final ? '1' : '0.65';
+  }
+}
+
+function showPinRow(v) {
+  document.getElementById('pinDots').classList.toggle('show', v);
+}
+
+function clearPinFill() {
+  [0,1,2,3].forEach(i => document.getElementById('pd'+i).classList.remove('on'));
+}
+
+function fillPinDots(n) {
+  [0,1,2,3].forEach(i => document.getElementById('pd'+i).classList.toggle('on', i < n));
+}
+
+function hideDisplays() {
+  document.getElementById('balCard').classList.remove('show');
+  document.getElementById('txnWrap').classList.remove('show');
+}
+
+function toast(msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast '+type;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'all 0.3s ease';
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(14px)';
+    setTimeout(() => el.remove(), 300);
+  }, 4000);
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+window.addEventListener('load', () => {
+  // Check Java backend health
+  checkBackend();
+  setInterval(checkBackend, 30000); // Re-check every 30s
+
+  // Seed demo data if empty
+  if (DB.users().length === 0) {
+    const demos = [
+      { name:'Rahul Sharma', email:'rahul@demo.com', password:'demo123', pin:'1234', balance:10000 },
+      { name:'Priya Patel',  email:'priya@demo.com', password:'demo123', pin:'1234', balance:5000  },
+      { name:'Amit Kumar',   email:'amit@demo.com',  password:'demo123', pin:'5678', balance:8000  },
+    ];
+    DB.setUsers(demos);
+    demos.forEach(u => addTxn({ sender:'SYSTEM', receiver:u.email, amount:u.balance, type:'credit', note:'Welcome bonus' }));
+  }
+
+  // Resume session
+  if (DB.session() && currentUser()) {
+    goWake();
+  }
+
+  // Keyboard shortcuts
+  document.getElementById('loginPassword').addEventListener('keyup', e => e.key==='Enter' && handleLogin());
+  document.getElementById('regPin').addEventListener('keyup', e => e.key==='Enter' && handleRegister());
+});
+</script>
+</body>
+</html>
